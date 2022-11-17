@@ -1151,24 +1151,24 @@ mod vm_state_tests {
     // push incoming time most significant
 
     pub const TIMESTAMP_CMP_TEST: &str = "
-    push 30
-    push 15
-    push 21
-    push 11
-    dup1
-    dup1
-    lt
-    swap2
-    eq
-    swap2
-    swap1
-    swap3
-    swap1
-    lte
-    and
-    add
-    return
-";
+        push 30
+        push 15
+        push 21
+        push 11
+        dup1
+        dup1
+        lt
+        swap2
+        eq
+        swap2
+        swap1
+        swap3
+        swap1
+        lte
+        and
+        add
+        return
+        ";
 
     pub const TIMESTAMP_CMP_TWO_TEST: &str = "
         push 21
