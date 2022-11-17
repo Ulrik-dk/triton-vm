@@ -1155,27 +1155,18 @@ mod vm_state_tests {
     push 15
     push 21
     push 11
-
     dup1
     dup1
-
     lt
-
     swap2
-
     eq
-
     swap2
     swap1
     swap3
     swap1
-
     lte
-
     and
-
     add
-
     return
 ";
 
@@ -1184,22 +1175,14 @@ mod vm_state_tests {
         push 11
         push 30
         push 15
-
         lte
-
         dup2
         dup2
-
         lt
-
         and
-
         swap2
-
         lte
-
         add
-
         return
         ";
 
