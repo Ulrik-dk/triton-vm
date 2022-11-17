@@ -1178,10 +1178,11 @@ mod vm_state_tests {
         lte
         dup2
         dup2
-        lt
+        eq
         and
         swap2
-        lte
+        swap1
+        lt
         add
         return
         ";
