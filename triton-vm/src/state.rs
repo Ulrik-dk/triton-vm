@@ -1135,4 +1135,80 @@ mod vm_state_tests {
             println!("{}", state);
         }
     }
+
+    // buffer heuristic TBD, should probably not be a hardcoded constant
+    // currently just checks that incoming is less than refernce
+    // adding a buffer would probably just amount to adding that to the reference
+    // time, or subtracting from input time, to allow timestamps from a limited future
+
+    // incoming is the timestamp to be checked, reference is the 'youngest' acceptable timestamp
+
+    // stack assumptions are very conveniently chosen:
+    // push reference time least significant
+    // push incoming time least significant
+
+    // push reference time most significant
+    // push incoming time most significant
+
+    pub const TIMESTAMP_CMP_TEST: &str = "
+    push 30
+    push 15
+    push 21
+    push 11
+
+    dup1
+    dup1
+
+    lt
+
+    swap2
+
+    eq
+
+    swap2
+    swap1
+    swap3
+    swap1
+
+    lte
+
+    and
+
+    add
+
+    return
+";
+
+    #[test]
+    fn run_timestamp_test() {
+        let code = TIMESTAMP_CMP_TEST;
+
+        let program = Program::from_code(code).unwrap();
+        let (trace, out, _err) = program.run(vec![], vec![]);
+
+        println!("{}", program);
+        for state in trace.iter() {
+            println!("{}", state);
+        }
+
+        let last_state = trace.last().unwrap();
+        assert_eq!(BFieldElement::new(1), last_state.op_stack.st(ST0));
+    }
+
+    // Commented out because BFieldElements do not currently allow <
+    // fn rust_equivalent_timestamp_cmp(stack: &mut Vec<BFieldElement>) {
+    //     // stack assumptions are very conveniently chosen:
+    //     // push reference time least significant
+    //     // push incoming time least significant
+
+    //     // push reference time most significant
+    //     // push incoming time most significant
+    //     let ref_lo = stack.pop().unwrap();
+    //     let inp_lo = stack.pop().unwrap();
+
+    //     let ref_hi = stack.pop().unwrap();
+    //     let inp_hi = stack.pop().unwrap();
+
+    //     return (inp_hi < ref_hi || (inp_hi == ref_hi && inp_lo <= ref_lo));
+    // }
 }
