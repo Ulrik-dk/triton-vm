@@ -1170,6 +1170,13 @@ mod vm_state_tests {
         return
         ";
 
+    // for the shorter version below:
+    // push reference time most significant
+    // push incoming time most significant
+
+    // push reference time least significant
+    // push incoming time least significant
+
     pub const TIMESTAMP_CMP_TWO_TEST: &str = "
         push 21
         push 11
