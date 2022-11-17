@@ -1179,9 +1179,33 @@ mod vm_state_tests {
     return
 ";
 
+    pub const TIMESTAMP_CMP_TWO_TEST: &str = "
+        push 21
+        push 11
+        push 30
+        push 15
+
+        lte
+
+        dup2
+        dup2
+
+        lt
+
+        and
+
+        swap2
+
+        lte
+
+        add
+
+        return
+        ";
+
     #[test]
     fn run_timestamp_test() {
-        let code = TIMESTAMP_CMP_TEST;
+        let code = TIMESTAMP_CMP_TWO_TEST;
 
         let program = Program::from_code(code).unwrap();
         let (trace, out, _err) = program.run(vec![], vec![]);
