@@ -1137,18 +1137,18 @@ mod vm_state_tests {
         }
     }
 
-    pub const TIMESTAMP_CMP_TEST: &str = "
+    pub const TIMESTAMP_LT_TEST: &str = "
         read_io
         read_io
         read_io
         read_io
 
         swap3
-        call cmp_ts
+        call ts_lt
         halt
 
-    cmp_ts:
-        lte
+    ts_lt:
+        lt
         dup2
         dup2
         eq
@@ -1160,14 +1160,14 @@ mod vm_state_tests {
         return
     ";
 
-    fn rust_equivalent_timestamp_cmp(stdin: &mut Vec<BFieldElement>) -> bool {
+    fn rust_equivalent_timestamp_lt(stdin: &mut Vec<BFieldElement>) -> bool {
         let limit_lo = stdin.pop().unwrap().value();
         let limit_hi = stdin.pop().unwrap().value();
 
         let test_lo = stdin.pop().unwrap().value();
         let test_hi = stdin.pop().unwrap().value();
 
-        (test_lo <= limit_lo && test_hi == limit_hi) || test_hi < limit_hi
+        (test_lo < limit_lo && test_hi == limit_hi) || test_hi < limit_hi
     }
 
     fn timestamp_cmp_test_run(limit_timestamp: Vec<u32>, test_timestamp: Vec<u32>) {
@@ -1177,7 +1177,7 @@ mod vm_state_tests {
             .map(|a| BFieldElement::from(*a))
             .collect_vec();
 
-        let code = TIMESTAMP_CMP_TEST;
+        let code = TIMESTAMP_LT_TEST;
         let program = Program::from_code(code).unwrap();
 
         let (trace, _out, _err) = program.run(stdin.clone(), vec![]);
@@ -1189,7 +1189,7 @@ mod vm_state_tests {
 
         let result = trace.last().unwrap().op_stack.st(ST0);
 
-        let expected = rust_equivalent_timestamp_cmp(&mut stdin);
+        let expected = rust_equivalent_timestamp_lt(&mut stdin);
         let boolean_result = result.value() > 0;
         assert_eq!(expected, boolean_result);
     }
