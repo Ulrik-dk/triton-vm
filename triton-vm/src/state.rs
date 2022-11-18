@@ -791,6 +791,7 @@ impl<'pgm> Display for VMState<'pgm> {
 #[cfg(test)]
 mod vm_state_tests {
 
+    use rand::Rng;
     use twenty_first::shared_math::other::random_elements_array;
     use twenty_first::shared_math::rescue_prime_digest::Digest;
     use twenty_first::util_types::algebraic_hasher::AlgebraicHasher;
@@ -1136,28 +1137,14 @@ mod vm_state_tests {
         }
     }
 
-    // buffer heuristic TBD, should probably not be a hardcoded constant
-    // currently just checks that incoming is less than refernce
-    // adding a buffer would probably just amount to adding that to the reference
-    // time, or subtracting from input time, to allow timestamps from a limited future
-
-    // incoming is the timestamp to be checked, reference is the 'youngest' acceptable timestamp
-
-    // for the shorter version below:
-    // push reference time most significant
-    // push incoming time most significant
-
-    // push reference time least significant
-    // push incoming time least significant
-
     pub const TIMESTAMP_CMP_TEST: &str = "
         read_io
         read_io
         read_io
         read_io
 
+        swap3
         call cmp_ts
-        assert
         halt
 
     cmp_ts:
@@ -1171,41 +1158,63 @@ mod vm_state_tests {
         lt
         add
         return
-        ";
+    ";
 
-    #[test]
-    fn run_timestamp_test() {
+    fn rust_equivalent_timestamp_cmp(stdin: &mut Vec<BFieldElement>) -> bool {
+        let limit_lo = stdin.pop().unwrap().value();
+        let limit_hi = stdin.pop().unwrap().value();
+
+        let test_lo = stdin.pop().unwrap().value();
+        let test_hi = stdin.pop().unwrap().value();
+
+        (test_lo <= limit_lo && test_hi == limit_hi) || test_hi < limit_hi
+    }
+
+    fn timestamp_cmp_test_run(limit_timestamp: Vec<u32>, test_timestamp: Vec<u32>) {
+        let mut stdin = vec![limit_timestamp, test_timestamp]
+            .concat()
+            .iter()
+            .map(|a| BFieldElement::from(*a))
+            .collect_vec();
+
         let code = TIMESTAMP_CMP_TEST;
-
         let program = Program::from_code(code).unwrap();
-        let (trace, out, _err) = program.run(
-            vec![30_u64.into(), 15_u64.into(), 21_u64.into(), 11_u64.into()],
-            vec![],
-        );
+
+        let (trace, _out, _err) = program.run(stdin.clone(), vec![]);
 
         println!("{}", program);
         for state in trace.iter() {
             println!("{}", state);
         }
 
-        let last_state = trace.last().unwrap();
-        assert_eq!(BFieldElement::new(1), last_state.op_stack.st(ST0));
+        let result = trace.last().unwrap().op_stack.st(ST0);
+
+        let expected = rust_equivalent_timestamp_cmp(&mut stdin);
+        let boolean_result = result.value() > 0;
+        assert_eq!(expected, boolean_result);
     }
 
-    // Commented out because BFieldElements do not currently allow <
-    // fn rust_equivalent_timestamp_cmp(stack: &mut Vec<BFieldElement>) {
-    //     // stack assumptions are very conveniently chosen:
-    //     // push reference time least significant
-    //     // push incoming time least significant
+    fn split_timestamp(timestamp: u64) -> Vec<u32> {
+        let lo: u32 = (timestamp & 0xFFFFFFFF) as u32;
+        let hi: u32 = (timestamp >> 32) as u32;
+        vec![hi, lo]
+    }
 
-    //     // push reference time most significant
-    //     // push incoming time most significant
-    //     let ref_lo = stack.pop().unwrap();
-    //     let inp_lo = stack.pop().unwrap();
-
-    //     let ref_hi = stack.pop().unwrap();
-    //     let inp_hi = stack.pop().unwrap();
-
-    //     return (inp_hi < ref_hi || (inp_hi == ref_hi && inp_lo <= ref_lo));
-    // }
+    #[test]
+    fn run_timestamp_cmp_equivalency_test() {
+        let mut rng = rand::thread_rng();
+        let value: u64 = rng.gen();
+        let timestamp = (value / 5) * 4; // limit range
+        let offset = 1000u64;
+        {
+            let test_timestamp = split_timestamp(timestamp);
+            let limit_timestamp = split_timestamp(timestamp + offset);
+            timestamp_cmp_test_run(limit_timestamp, test_timestamp);
+        }
+        {
+            let test_timestamp = split_timestamp(timestamp + offset);
+            let limit_timestamp = split_timestamp(timestamp);
+            timestamp_cmp_test_run(limit_timestamp, test_timestamp);
+        }
+    }
 }
