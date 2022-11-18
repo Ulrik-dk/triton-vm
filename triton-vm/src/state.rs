@@ -1143,33 +1143,6 @@ mod vm_state_tests {
 
     // incoming is the timestamp to be checked, reference is the 'youngest' acceptable timestamp
 
-    // stack assumptions are very conveniently chosen:
-    // push reference time least significant
-    // push incoming time least significant
-
-    // push reference time most significant
-    // push incoming time most significant
-
-    pub const TIMESTAMP_CMP_TEST: &str = "
-        push 30
-        push 15
-        push 21
-        push 11
-        dup1
-        dup1
-        lt
-        swap2
-        eq
-        swap2
-        swap1
-        swap3
-        swap1
-        lte
-        and
-        add
-        return
-        ";
-
     // for the shorter version below:
     // push reference time most significant
     // push incoming time most significant
@@ -1177,11 +1150,17 @@ mod vm_state_tests {
     // push reference time least significant
     // push incoming time least significant
 
-    pub const TIMESTAMP_CMP_TWO_TEST: &str = "
-        push 21
-        push 11
-        push 30
-        push 15
+    pub const TIMESTAMP_CMP_TEST: &str = "
+        read_io
+        read_io
+        read_io
+        read_io
+
+        call cmp_ts
+        assert
+        halt
+
+    cmp_ts:
         lte
         dup2
         dup2
@@ -1196,10 +1175,13 @@ mod vm_state_tests {
 
     #[test]
     fn run_timestamp_test() {
-        let code = TIMESTAMP_CMP_TWO_TEST;
+        let code = TIMESTAMP_CMP_TEST;
 
         let program = Program::from_code(code).unwrap();
-        let (trace, out, _err) = program.run(vec![], vec![]);
+        let (trace, out, _err) = program.run(
+            vec![30_u64.into(), 15_u64.into(), 21_u64.into(), 11_u64.into()],
+            vec![],
+        );
 
         println!("{}", program);
         for state in trace.iter() {
